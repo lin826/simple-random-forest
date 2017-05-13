@@ -46,14 +46,18 @@ def main(args):
         X_Train = load_csv(args.train_X)
         T_Train = load_csv(args.train_T).flatten()
         X_Train_phi, phi = preprocess(args, X_Train, T_Train)
-    
+
         logging.info('Training')
         model.validate(X_Train_phi, T_Train, params=get_param_validate(args))
     elif args.task == 'train':
         X_Train = load_csv(args.train_X)
         T_Train = load_csv(args.train_T).flatten()
         X_Train_phi, phi = preprocess(args, X_Train, T_Train)
-    
+        inds = range(len(X_Train))
+        np.random.shuffle(inds)
+        X_Train_phi = X_Train_phi[inds]
+        T_Train = T_Train[inds]
+
         logging.info('Training')
         model.train(X_Train_phi, T_Train, param=get_param(args))
 
@@ -80,9 +84,24 @@ def main(args):
         model.load(args.load)
         logging.info('Model loaded from %s' % args.load)
         logging.info('Plotting')
+        l_tree = model.model.estimators_
+        plot_decision_tree(l_tree,args.dot)
 
-        # TODO: Plot
-        plot_decision_tree(model)
+    elif args.task == 'dt_eval':
+        phi = Preprocessor()
+        phi.load(args.load + '_phi')
+
+        X_Test = load_csv(args.test_X)
+        T_Test = load_csv(args.test_T).flatten()
+        X_Test_phi = phi.transform(X_Test)
+
+        model.load(args.load)
+        logging.info('Model loaded from %s' % args.load)
+        logging.info('Decision Tree Evaluating')
+        l_tree = model.model.estimators_
+        for tree in l_tree:
+            test_acc = tree.score(X_Test_phi, T_Test)
+            print('%f' % test_acc)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -96,11 +115,13 @@ if __name__ == '__main__':
 
     parser.add_argument('--pre', help='preprocess type', type=str, choices=['pca', 'lda'], default='pca')
     parser.add_argument('--deg', help='degree for preprocess', type=int, default=10)
-    parser.add_argument('--task', help='task type', type=str, choices=['validate', 'train', 'plot'], default='validate')
+    parser.add_argument('--task', help='task type', type=str, choices=['validate', 'train', 'plot', 'dt_eval'], default='validate')
     parser.add_argument('--model', help='model type', type=str, choices=['rf'], default='rf')
 
     parser.add_argument('--param_rf', help='parameter for rf', type=str, default='100,1000,0.5')
     parser.add_argument('--verbose', help='log on/off', type=bool, default=False)
+
+    parser.add_argument('--dot', help='plotting dot save to', type=str, default='../data/treepic.dot')
 
     args = parser.parse_args()
     if args.verbose:
