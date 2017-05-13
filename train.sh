@@ -1,4 +1,4 @@
-DEG=10
+DEG=2
 PRE="pca"
 PARAM=""
 SAVE="../tmp/model"

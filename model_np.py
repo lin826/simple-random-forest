@@ -26,13 +26,23 @@ class Model(object):
 class RandomForest(Model):
     def train(self, X, T, param):
         logging.info('X = [%d, %d], T = [1]' % (X.shape[0], X.shape[1]))
-        n_train = int(float(len(X) * param[2]))
-        for i in range(1, 6, 1):
-            t_ = T[:n_train]
-            #print (t_ == i)
-            print ('%d = %d' % (i, (t_ == i).sum()))
-        self.model = RandomForestClassifier(n_estimators=int(param[0]), min_samples_leaf=int(param[1]))
-        self.model.fit(X[:n_train], T[:n_train])
+        #n_train = int(float(len(X) * param[2]))
+        X_ = []
+        T_ = []
+        for i in range(1, int(np.max(T) + 1), 1):
+            X_c = X[T == i]
+            T_c = T[T == i]
+            n_c_train = int(float(len(X_c)) * param[2])
+            X_.append(X_c[:n_c_train])
+            T_.append(T_c[:n_c_train])
+        X_ = np.asarray(np.concatenate(X_))
+        T_ = np.asarray(np.concatenate(T_))
+
+        for i in range(1, int(np.max(T) + 1), 1):
+            print ('%d = %d' % (i, (T_ == i).sum()))
+
+        self.model = RandomForestClassifier(bootstrap=True, n_estimators=int(param[0]), min_samples_leaf=int(param[1]))
+        self.model.fit(X_, T_)
 
     def validate(self, X, T, params):
         logging.info('X = [%d, %d], T = [1]' % (X.shape[0], X.shape[1]))
